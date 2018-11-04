@@ -1,8 +1,9 @@
 #include "SBS.h"
 
 SBS::commandSet commands[38];
-uint8_t smbusAddress;
-
+uint8_t smbusAddress=0x0b;
+uint8_t smbusA=0xff;
+uint8_t smbusC=0xff;
 
 SBS::SBS(uint8_t address, char sda, char scl) {
   //              Slave Function        Address,Writable?, byte count
@@ -47,35 +48,48 @@ SBS::SBS(uint8_t address, char sda, char scl) {
   commands[37] = {"VoltageCellOne",         0x3f, false, 1, "mV"};
 
   smbusAddress = address;
-  
-  Wire.begin(sda, scl);
-  Wire.setClockStretchLimit(35000);
-  Wire.setClock(40000);
+
+  smbusA = sda ;
+  smbusC = scl ;
+}
+
+void SBS::Init()
+{
+    Wire.begin(smbusA, smbusC);
+    //Wire.setClockStretchLimit(35000);
+    Wire.setClock(40000);
 }
 
 byte SBS::sbsReadByte(uint8_t command) {
-  byte b;
+  byte b=0;
+
+
   Wire.beginTransmission(smbusAddress);
   Wire.write(command);
   if(Wire.endTransmission(false) == 0) {
     Wire.requestFrom(smbusAddress, 1, true);
     b = Wire.read();
-    return b;
   }
-  return 0;
+
+//  Serial.printf("\nSBS Read Byte %d\n",b);
+
+  return b;
 }
 
 short SBS::sbsReadInt(uint8_t command) {
   uint8_t b1, b2;
+  uint16_t word = 0;
   Wire.beginTransmission(smbusAddress);
   Wire.write(command);
   if(Wire.endTransmission(false) == 0) {
     Wire.requestFrom(smbusAddress, 2, true);
     b1 = Wire.read();
     b2 = Wire.read();
-    return b1 | (b2 << 8);
+    word = b1 | (b2 << 8);
   }
-  return 0;
+
+//  Serial.printf("\nSBS Read Word %d\n",word);
+  return word;
 }
 
 void SBS::sbsReadString(char str[], uint8_t command) {
@@ -86,10 +100,12 @@ void SBS::sbsReadString(char str[], uint8_t command) {
   if(Wire.endTransmission(false) == 0) {
     Wire.requestFrom(smbusAddress, 33, true); //hack, instead of 1, request max char[] size per docs
     n = Wire.read();
+
+//    Serial.printf("\nSBS Read String length %d\n",n);
 	//Wire.requestFrom(smbusAddress, n, false); //broken, not sure why
 	for(int i = 0; i < n; i++)
 	  str[i] = (char)Wire.read();
-    str[n] = (char)0;
+  str[n] = (char)0;
   }
+//  Serial.printf("\nSBS Read String length %s\n",str);
 }
-

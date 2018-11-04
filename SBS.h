@@ -5,7 +5,7 @@
 #include "Arduino.h"
 #endif
 
-#include "Wire.h"
+#include <Wire.h>
 
 class SBS {
 public:
@@ -16,13 +16,14 @@ public:
     int bytes; //make enum
     String type;
   } commands[38];
-  
+
   /* enum type : uint8_t {
     a = 1,
     b = 2
   };
  */
   SBS(uint8_t address, char sda, char scl);
+  void Init();
   byte sbsReadByte(uint8_t command);
   short sbsReadInt(uint8_t command);
   uint8_t sbsReadStringSize(uint8_t command);
